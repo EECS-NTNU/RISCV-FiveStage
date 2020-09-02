@@ -1,21 +1,19 @@
-Best viewed in emacs org mode.
-
 This is the coursework for the graded part of the TDT4255 course at NTNU.
 
 * Instructions
 
   To get started designing your 5-stage RISC-V pipeline you read the [[./introduction.org][introduction]]
-  
-  If you want an introduction to chisel and hardware design you should do the [[https://github.com/PeterAaser/tdt4255-chisel-intro][Chisel Intro]] 
+
+  If you want an introduction to chisel and hardware design you should do the [[https://github.com/PeterAaser/tdt4255-chisel-intro][Chisel Intro]]
   exercise first.
 
 * About
   Since much of the tooling for HW design is rather difficult to work with this skeleton comes
   with a lot of reinvented wheels which should make inspecting what is really going on a little
   clearer.
-  
+
   The FiveStage suite works in the following way:
-  
+
 ** Parsing a test
    The [[./src/test/scala/RISCV/Parser.scala][Parser]] parses an assembly test found in the test resource directory.
    The resulting program can then be loaded on to a VM, or assembled into machine code.
@@ -38,22 +36,22 @@ This is the coursework for the graded part of the TDT4255 course at NTNU.
 ** Checking the result
    If your processor performed the same updates to registers and memory, and terminated at the same
    address the test is successful.
-   
+
 ** Debugging a failed test
-   When a test fails, (or if you have enabled verbose logging) a side by side execution log is shown, 
+   When a test fails, (or if you have enabled verbose logging) a side by side execution log is shown,
    allowing you to pinpoint exactly how your processor went wrong.
-   
+
 * Intended use
   This coursework is intended to be used!
   If you are a tutor currently teaching computer architecture you may freely use this project, but
   I would be very grateful if you provided me with feedback. Pull requests always welcome!
-  
+
 * Contributing
   Considering the very significant amount of work saved on making your own coursework, you could
   maybe help adding features.
-  Take a look at [[./TODO.org][the TODO file]] (does not render well in github) to get an idea of nice features to 
+  Take a look at [[./TODO.org][the TODO file]] (does not render well in github) to get an idea of nice features to
   have, or add different features altogether!
-  
+
   Additionally, if you write your own tests, please send a pull request! The more tests the better!
 
 * Solution
