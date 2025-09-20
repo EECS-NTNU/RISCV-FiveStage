@@ -75,6 +75,7 @@ class CPU extends MultiIOModule {
   EX.io.op1Select      := IDBarrier.op1SelectOut
   EX.io.op2Select      := IDBarrier.op2SelectOut
   EX.io.immType        := IDBarrier.immTypeOut
+  EX.io.branchType     := IDBarrier.branchTypeOut
   EX.io.ALUop          := IDBarrier.ALUopOut
   EX.io.PC             := IDBarrier.PCOut
   EX.io.controlSignals := IDBarrier.controlSignalsOut
@@ -83,6 +84,7 @@ class CPU extends MultiIOModule {
   EXBarrier.InstructionIn    := EX.io.Instruction
   EXBarrier.ALUResultIn      := EX.io.ALUResult
   EXBarrier.BranchTargetIn   := EX.io.BranchTarget
+  EXBarrier.BranchTakenIn    := EX.io.BranchTaken
   EXBarrier.controlSignalsIn := IDBarrier.controlSignalsOut
   EXBarrier.readData2In      := EX.io.readData2 // passed through EX
   MEM.io.ALUResult           := EXBarrier.ALUResultOut
@@ -94,11 +96,13 @@ class CPU extends MultiIOModule {
   MEMBarrier.ALUResultIn      := EXBarrier.ALUResultOut
   MEMBarrier.controlSignalsIn := EXBarrier.controlSignalsOut
   MEMBarrier.BranchTargetIn   := EXBarrier.BranchTargetOut // BranchTarget passed through
+  MEMBarrier.BranchTakenIn    := EXBarrier.BranchTakenOut // BranchTaken passed through
   MEMBarrier.DMEMDataIn       := MEM.io.DMEMData
   ID.io.ALUResultFromWB       := MEMBarrier.ALUResultOut
   ID.io.instructionFromWB     := MEMBarrier.InstructionOut
   ID.io.controlSignalsFromWB  := MEMBarrier.controlSignalsOut
   ID.io.DMEMDataFromWB        := MEMBarrier.DMEMDataOut
   IF.io.BranchTarget          := MEMBarrier.BranchTargetOut    // for branches and jumps
+  IF.io.BranchTaken           := MEMBarrier.BranchTakenOut     // for branches and jumps
   IF.io.controlSignals        := MEMBarrier.controlSignalsOut
 }

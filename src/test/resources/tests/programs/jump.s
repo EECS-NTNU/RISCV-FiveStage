@@ -1,10 +1,9 @@
 main:
-  addi	sp,sp,-16
-	sw	ra,12(sp)
-	lw	a0,0(zero)
-	call	find
-	lw	ra,12(sp)
-	addi	sp,sp,16
-	jr	ra
+  li t0, 40
+  li t1, 40
+  blt t0, t1, mog
+  call find
+mog:
+  done
 find:
-  ret
+  jr ra

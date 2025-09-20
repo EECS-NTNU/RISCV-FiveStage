@@ -18,16 +18,19 @@ class Execute extends MultiIOModule {
       val op1Select      = Input(UInt(1.W))
       val op2Select      = Input(UInt(1.W))
       val immType        = Input(UInt(3.W))
+      val branchType     = Input(UInt(3.W))
       val ALUop          = Input(UInt(4.W))
 
       val ALUResult      = Output(UInt(32.W))
       val BranchTarget   = Output(UInt(32.W))
+      val BranchTaken    = Output(Bool())
     }
   )
 
   import Op1Select._
   import Op2Select._
   import ImmFormat._
+  import branchType._
 
   val ALU = Module(new ArithmeticUnit).io
 
@@ -45,8 +48,39 @@ class Execute extends MultiIOModule {
     imm := Cat(Fill(11, io.Instruction.immediateSType(20.U)), io.Instruction.immediateJType)
   }.elsewhen(io.immType === ImmFormat.UTYPE) {
     imm := io.Instruction.immediateUType.asUInt
+  }.elsewhen(io.immType === ImmFormat.BTYPE) {
+    imm := Cat(Fill(20, io.Instruction.immediateBType(11.U)), io.Instruction.immediateBType)
   }.otherwise {
     imm := 0.U
+  }
+
+  /*
+   * Branch taken?
+   */
+  val BranchTaken = Wire(Bool())
+  io.BranchTaken := BranchTaken
+
+  // calculate if branch taken based on ALU output
+
+  when(!io.controlSignals.branch) {
+    BranchTaken := false.B
+  }.otherwise {
+    // a branch bro
+    when(io.branchType === beq) {
+      BranchTaken := ALU.ALUResult === 0.U
+    }.elsewhen(io.branchType === neq) {
+      BranchTaken := ALU.ALUResult != 0.U
+    }.elsewhen(io.branchType === gte) {
+      BranchTaken := ALU.ALUResult.asSInt >= 0.S
+    }.elsewhen(io.branchType === lt) {
+      BranchTaken := ALU.ALUResult.asSInt < 0.S
+    }.elsewhen(io.branchType === gteu) {
+      BranchTaken := ALU.ALUResult >= 0.U // this will not work?
+    }.elsewhen(io.branchType === ltu) {
+      BranchTaken := ALU.ALUResult < 0.U // this will not work?
+    }.otherwise { // will not happen
+      BranchTaken := false.B
+    }
   }
 
   /*
@@ -54,7 +88,7 @@ class Execute extends MultiIOModule {
    */
   when(io.controlSignals.jump && io.immType === ImmFormat.ITYPE) {
     // JALR
-    io.BranchTarget := (io.readData1 + imm) // and with boi
+    io.BranchTarget := (io.readData1 + imm) & "h_ffff_fffe".U
   }.elsewhen(io.controlSignals.jump || io.controlSignals.branch) {
     // JAL or branch
     io.BranchTarget := io.PC + imm
@@ -91,5 +125,6 @@ class Execute extends MultiIOModule {
   KeepSignal(io.BranchTarget)
   KeepSignal(io.immType)
   KeepSignal(io.PC)
+  KeepSignal(io.branchType)
 } 
   

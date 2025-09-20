@@ -71,7 +71,6 @@ object branchType {
   val DC   = 7.asUInt(3.W)
 }
 
-
 /**
   these take the role of the alu source signal.
   Used in the decoder.

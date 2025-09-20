@@ -19,17 +19,17 @@ import LogParser._
 
 object Manifest {
 
-  val singleTest = "jump.s"
+  val singleTest = "memoFib.s"
 
   val nopPadded = true
 
   val singleTestOptions = TestOptions(
     printIfSuccessful  = false,
-    printErrors        = false,
+    printErrors        = true,
     printParsedProgram = true,
-    printVMtrace       = false,
-    printVMfinal       = false,
-    printMergedTrace   = false,
+    printVMtrace       = true,
+    printVMfinal       = true,
+    printMergedTrace   = true,
     printBinary        = false,
     nopPadded          = nopPadded,
     breakPoints        = Nil, // not implemented

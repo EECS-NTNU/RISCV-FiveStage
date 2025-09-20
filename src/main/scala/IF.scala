@@ -28,6 +28,7 @@ class InstructionFetch extends MultiIOModule {
 
       // from WB stage
       val BranchTarget = Input(UInt(32.W))
+      val BranchTaken  = Input(Bool())
       val controlSignals = Input(new ControlSignals)
     })
 
@@ -50,7 +51,8 @@ class InstructionFetch extends MultiIOModule {
   io.PC := PC
   IMEM.io.instructionAddress := PC
 
-  when(io.controlSignals.jump) {
+  // branch or jump?
+  when(io.controlSignals.jump || (io.controlSignals.branch && io.BranchTaken)) {
     PC := io.BranchTarget
   }.otherwise {
     PC := PC + 4.U
