@@ -69,8 +69,9 @@ class Decoder() extends Module {
     XORI   -> List(Y,        N,       N,        N,       N,    branchType.DC,             rs1,          imm,       ImmFormat.DC,        ALUOps.XOR),
     ORI    -> List(Y,        N,       N,        N,       N,    branchType.DC,             rs1,          imm,       ImmFormat.DC,         ALUOps.OR),
     LUI    -> List(Y,        N,       N,        N,       N,    branchType.DC,    Op1Select.DC,          imm,              UTYPE,         ALUOps.COPY_B), // pass immediate through
-    JAL    -> List(Y,        N,       N,        N,       Y,    branchType.jump,            PC, Op2Select.DC,              JTYPE,         ALUOps.COPY_A), // pass PC through
-    JALR   -> List(Y,        N,       N,        N,       Y,    branchType.jump,            PC, Op2Select.DC,              ITYPE,         ALUOps.COPY_A), // pass PC through
+    AUIPC  -> List(Y,        N,       N,        N,       N,    branchType.DC,              PC,          imm,              UTYPE,         ALUOps.ADD),
+    JAL    -> List(Y,        N,       N,        N,       Y,    branchType.jump,            PC, Op2Select.DC,              JTYPE,         ALUOps.ADD), // link
+    JALR   -> List(Y,        N,       N,        N,       Y,    branchType.jump,            PC, Op2Select.DC,              ITYPE,         ALUOps.ADD), // link
     BEQ    -> List(N,        N,       N,        Y,       N,    branchType.beq,            rs1,          rs2,              BTYPE,         ALUOps.DC), // fix
     BNE    -> List(N,        N,       N,        Y,       N,    branchType.neq,            rs1,          rs2,              BTYPE,         ALUOps.DC), // fix
     BLT    -> List(N,        N,       N,        Y,       N,    branchType.lt,             rs1,          rs2,              BTYPE,         ALUOps.DC), // fix

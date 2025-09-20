@@ -71,16 +71,18 @@ class Execute extends MultiIOModule {
   when(io.op1Select === Op1Select.rs1) {
     ALU.op1 := io.readData1
   }.elsewhen(io.op1Select === Op1Select.PC) { // for jump and link
-    ALU.op1 := io.PC + 4.U // link next Instruction
+    ALU.op1 := io.PC
   }.otherwise {
     ALU.op1 := 0.U
   }
 
   // operation 2 select
-  when(io.op2Select === Op2Select.rs2) {
-    ALU.op2 := io.readData2
+  when(io.op2Select === Op2Select.DC && io.controlSignals.jump) { // increment PC
+    ALU.op2 := 4.U
   }.elsewhen(io.op2Select === Op2Select.imm) {
     ALU.op2 := imm
+  }.elsewhen(io.op2Select === Op2Select.rs2) {
+    ALU.op2 := io.readData2
   }.otherwise {
     ALU.op2 := 0.U
   }
