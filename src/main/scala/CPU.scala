@@ -53,7 +53,7 @@ class CPU extends MultiIOModule {
     TODO: Your code here
     */
 
-  // IF to IDgg
+  // IF to ID
   IFBarrier.PCIn          := IF.io.PC
   IFBarrier.InstructionIn := IF.io.Instruction
   ID.io.Instruction       := IFBarrier.InstructionOut
@@ -69,17 +69,20 @@ class CPU extends MultiIOModule {
   IDBarrier.immTypeIn        := ID.io.immType
   IDBarrier.ALUopIn          := ID.io.ALUop
   IDBarrier.PCIn             := IFBarrier.PCOut // passed through ID
-  EX.io.Instruction := IDBarrier.InstructionOut
-  EX.io.readData1   := IDBarrier.readData1Out
-  EX.io.readData2   := IDBarrier.readData2Out
-  EX.io.op1Select   := IDBarrier.op1SelectOut
-  EX.io.op2Select   := IDBarrier.op2SelectOut
-  EX.io.immType     := IDBarrier.immTypeOut
-  EX.io.ALUop       := IDBarrier.ALUopOut
+  EX.io.Instruction    := IDBarrier.InstructionOut
+  EX.io.readData1      := IDBarrier.readData1Out
+  EX.io.readData2      := IDBarrier.readData2Out
+  EX.io.op1Select      := IDBarrier.op1SelectOut
+  EX.io.op2Select      := IDBarrier.op2SelectOut
+  EX.io.immType        := IDBarrier.immTypeOut
+  EX.io.ALUop          := IDBarrier.ALUopOut
+  EX.io.PC             := IDBarrier.PCOut
+  EX.io.controlSignals := IDBarrier.controlSignalsOut
 
   // EX to MEM
   EXBarrier.InstructionIn    := EX.io.Instruction
   EXBarrier.ALUResultIn      := EX.io.ALUResult
+  EXBarrier.BranchTargetIn   := EX.io.BranchTarget
   EXBarrier.controlSignalsIn := IDBarrier.controlSignalsOut
   EXBarrier.readData2In      := EX.io.readData2 // passed through EX
   MEM.io.ALUResult           := EXBarrier.ALUResultOut
@@ -90,9 +93,12 @@ class CPU extends MultiIOModule {
   MEMBarrier.InstructionIn    := EXBarrier.InstructionOut
   MEMBarrier.ALUResultIn      := EXBarrier.ALUResultOut
   MEMBarrier.controlSignalsIn := EXBarrier.controlSignalsOut
+  MEMBarrier.BranchTargetIn   := EXBarrier.BranchTargetOut // BranchTarget passed through
   MEMBarrier.DMEMDataIn       := MEM.io.DMEMData
   ID.io.ALUResultFromWB       := MEMBarrier.ALUResultOut
   ID.io.instructionFromWB     := MEMBarrier.InstructionOut
   ID.io.controlSignalsFromWB  := MEMBarrier.controlSignalsOut
   ID.io.DMEMDataFromWB        := MEMBarrier.DMEMDataOut
+  IF.io.BranchTarget          := MEMBarrier.BranchTargetOut    // for branches and jumps
+  IF.io.controlSignals        := MEMBarrier.controlSignalsOut
 }
