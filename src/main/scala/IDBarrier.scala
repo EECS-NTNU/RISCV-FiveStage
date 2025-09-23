@@ -16,6 +16,7 @@ class IDBarrier extends MultiIOModule {
       val immTypeIn       = Input(UInt(3.W))
       val ALUopIn         = Input(UInt(4.W))
       val PCIn = Input(UInt(32.W))
+      val StageControl     = Input(UInt(2.W))
 
       // out
       val InstructionOut   = Output(new Instruction)
@@ -44,16 +45,22 @@ class IDBarrier extends MultiIOModule {
   val PCReg             = RegInit(0.U(32.W))
 
   // connections
-  InstructionReg    := io.InstructionIn
-  readData1Reg      := io.readData1In
-  readData2Reg      := io.readData2In
-  controlSignalsReg := io.controlSignalsIn
-  branchTypeReg     := io.branchTypeIn
-  op1SelectReg      := io.op1SelectIn
-  op2SelectReg      := io.op2SelectIn
-  immTypeReg        := io.immTypeIn
-  ALUopReg          := io.ALUopIn
-  PCReg             := io.PCIn
+  when(io.StageControl != StageControl.stall) {
+    when(io.StageControl === StageControl.bubble) {
+      InstructionReg    := Instruction.NOP // insert NOP to create a bubble in the pipeline
+    }.otherwise {
+      InstructionReg    := io.InstructionIn
+    }
+    readData1Reg      := io.readData1In
+    readData2Reg      := io.readData2In
+    controlSignalsReg := io.controlSignalsIn
+    branchTypeReg     := io.branchTypeIn
+    op1SelectReg      := io.op1SelectIn
+    op2SelectReg      := io.op2SelectIn
+    immTypeReg        := io.immTypeIn
+    ALUopReg          := io.ALUopIn
+    PCReg             := io.PCIn
+  }
 
   io.InstructionOut   := InstructionReg
   io.readData1Out     := readData1Reg

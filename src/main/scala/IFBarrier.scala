@@ -7,6 +7,7 @@ class IFBarrier extends MultiIOModule {
     new Bundle {
       val InstructionIn = Input(new Instruction)
       val PCIn = Input(UInt(32.W))
+      val StageControl     = Input(UInt(2.W))
       val InstructionOut = Output(new Instruction)
       val PCOut = Output(UInt(32.W))
     }
@@ -15,9 +16,12 @@ class IFBarrier extends MultiIOModule {
   // delay registers
   val PCReg = RegInit(UInt(32.W), 0.U)
 
-  io.InstructionOut := io.InstructionIn
+  io.InstructionOut := io.InstructionIn // how to deal with bubble here? Maybe not necessary?
 
-  PCReg := io.PCIn
+  when(io.StageControl != StageControl.stall) {
+    PCReg := io.PCIn
+  }
+
   io.PCOut := PCReg
 
   KeepSignal(io.PCOut)

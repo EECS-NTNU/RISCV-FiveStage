@@ -59,6 +59,19 @@ object ControlSignals {
   }
 }
 
+object StageControl {
+  val run    = 0.asUInt(2.W)
+  val stall  = 1.asUInt(2.W)
+  val bubble = 2.asUInt(2.W)
+}
+
+class PipelineControl extends Bundle() {
+  val IF     = UInt(2.W)
+  val ID     = UInt(2.W)
+  val EX     = UInt(2.W)
+  val MEM    = UInt(2.W)
+  val WB     = UInt(2.W)
+}
 
 object branchType {
   val beq  = 0.asUInt(3.W)

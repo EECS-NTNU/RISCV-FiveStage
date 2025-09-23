@@ -28,6 +28,7 @@ class InstructionDecode extends MultiIOModule {
       val controlSignalsFromWB = Input(new ControlSignals)
       val instructionFromWB    = Input(new Instruction)
       val DMEMDataFromWB       = Input(UInt(32.W))
+      val StageControl         = Input(UInt(2.W))
   
       val readData1 = Output(UInt(32.W))
       val readData2 = Output(UInt(32.W))
@@ -65,7 +66,7 @@ class InstructionDecode extends MultiIOModule {
 
   // these two get their values from the WB stage
   registers.io.writeAddress := io.instructionFromWB.registerRd
-  registers.io.writeEnable  := io.controlSignalsFromWB.regWrite
+  registers.io.writeEnable  := io.controlSignalsFromWB.regWrite && io.StageControl != StageControl.stall
 
   // Loads vs alu operations
   when(io.controlSignalsFromWB.memRead) {

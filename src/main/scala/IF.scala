@@ -30,6 +30,7 @@ class InstructionFetch extends MultiIOModule {
       val BranchTarget = Input(UInt(32.W))
       val BranchTaken  = Input(Bool())
       val controlSignals = Input(new ControlSignals)
+      val StageControl     = Input(UInt(2.W))
     })
 
   val IMEM = Module(new IMEM)
@@ -52,10 +53,14 @@ class InstructionFetch extends MultiIOModule {
   IMEM.io.instructionAddress := PC
 
   // branch or jump?
-  when(io.controlSignals.jump || (io.controlSignals.branch && io.BranchTaken)) {
-    PC := io.BranchTarget
+  when(io.StageControl === StageControl.run) {
+    when(io.controlSignals.jump || (io.controlSignals.branch && io.BranchTaken)) {
+      PC := io.BranchTarget
+    }.otherwise {
+      PC := PC + 4.U
+    }
   }.otherwise {
-    PC := PC + 4.U
+    PC := PC // stall pipeline
   }
 
   val instruction = Wire(new Instruction)

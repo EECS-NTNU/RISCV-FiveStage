@@ -13,6 +13,17 @@ class Execute extends MultiIOModule {
       val readData1 = Input(UInt(32.W))
       val readData2 = Input(UInt(32.W))
 
+      val DMEMforwardedMEM  = Input(UInt(32.W)) // direct output of the data memory, used after stall
+      val ALUforwardedMEM   = Input(UInt(32.W))
+      val DMEMforwardedWB   = Input(UInt(32.W))
+      val ALUforwardedWB    = Input(UInt(32.W))
+
+      val MEMInstruction = Input(new Instruction)
+      val WBInstruction  = Input(new Instruction)
+
+      val MEMControlSignals = Input(new ControlSignals)
+      val WBControlSignals = Input(new ControlSignals)
+
       val PC = Input(UInt(32.W))
 
       val op1Select      = Input(UInt(1.W))
@@ -21,14 +32,16 @@ class Execute extends MultiIOModule {
       val branchType     = Input(UInt(3.W))
       val ALUop          = Input(UInt(4.W))
 
-      val ALUResult      = Output(UInt(32.W))
-      val BranchTarget   = Output(UInt(32.W))
-      val BranchTaken    = Output(Bool())
+      val ALUResult       = Output(UInt(32.W))
+      val BranchTarget    = Output(UInt(32.W))
+      val BranchTaken     = Output(Bool())
+      val PipelineControl = Output(new PipelineControl)
     }
   )
 
   import Op1Select._
   import Op2Select._
+  import StageControl._
   import ImmFormat._
   import branchType._
 
@@ -98,12 +111,120 @@ class Execute extends MultiIOModule {
   }
 
   /*
+   * Forwarding unit and pipeline control
+   */
+  class Forward extends Module {
+    val io = IO(
+      new Bundle {
+        // forwarded values
+        val REG  = Input(UInt(32.W))
+        val MEM  = Input(UInt(32.W))
+        val WB   = Input(UInt(32.W))
+
+        // needed source
+        val RsEX  = Input(UInt(5.W))
+
+        // register destinations
+        val RdMEM = Input(UInt(5.W))
+        val RdWB  = Input(UInt(5.W))
+
+        val sourceNeeded  = Input(Bool())
+        val IsLoadMEM     = Input(Bool())
+
+        val regSource   = Output(UInt(32.W))
+        val loadForward = Output(Bool())
+      }
+    )
+
+    io.loadForward := false.B
+    when(!io.sourceNeeded) {
+      io.regSource   := 0.U
+    }.otherwise { // forwarding potentially needed
+      when(io.RsEX != io.RdMEM && io.RsEX != io.RdWB) {  // no need to forward
+        io.regSource := io.REG
+      }.elsewhen(io.RsEX === io.RdWB && io.RsEX != io.RdMEM) { // forward from WB stage
+        io.regSource := io.WB
+      }.otherwise { // forward from MEM stage
+        io.regSource := io.MEM
+        when(io.IsLoadMEM) { // we might need to wait for a load to resolve
+          io.loadForward := true.B
+        }
+      }
+    }
+  }
+
+  val RegSource1 = Module(new Forward).io
+  val RegSource2 = Module(new Forward).io
+
+  // register source 1 select
+  RegSource1.REG := io.readData1
+
+  when((RegSource1.loadForward || RegSource2.loadForward)) { // handle loads
+    RegSource1.MEM := io.DMEMforwardedMEM
+  }.otherwise {
+    RegSource1.MEM := io.ALUforwardedMEM
+  }
+
+  when(io.WBControlSignals.memRead) {
+    RegSource1.WB  := io.DMEMforwardedWB
+  }.otherwise {
+    RegSource1.WB  := io.ALUforwardedWB
+  }
+
+  RegSource1.RsEX  := io.Instruction.registerRs1
+  RegSource1.RdMEM := io.MEMInstruction.registerRd
+  RegSource1.RdWB  := io.WBInstruction.registerRd
+  RegSource1.sourceNeeded := io.op1Select === Op1Select.rs1
+  RegSource1.IsLoadMEM    := io.MEMControlSignals.memRead
+
+  // register source 2 select
+  RegSource2.REG := io.readData2
+
+  when((RegSource1.loadForward || RegSource2.loadForward)) { // handle loads
+    RegSource2.MEM := io.DMEMforwardedMEM
+  }.otherwise {
+    RegSource2.MEM := io.ALUforwardedMEM
+  }
+
+  when(io.WBControlSignals.memRead) {
+    RegSource2.WB  := io.DMEMforwardedWB
+  }.otherwise {
+    RegSource2.WB  := io.ALUforwardedWB
+  }
+
+  RegSource2.RsEX  := io.Instruction.registerRs2
+  RegSource2.RdMEM := io.MEMInstruction.registerRd
+  RegSource2.RdWB  := io.WBInstruction.registerRd
+  RegSource2.sourceNeeded := io.op2Select === Op2Select.rs2
+  RegSource2.IsLoadMEM    := io.MEMControlSignals.memRead
+
+  // when depending on result from a load in the mem stage we stall for a cycle
+  val lastCycleStall = RegInit(false.B) // to avoid deadlock
+
+  // we need to wait for a load to resolve
+  lastCycleStall := false.B
+  when((RegSource1.loadForward || RegSource2.loadForward) && !lastCycleStall) {
+    io.PipelineControl.IF := StageControl.stall
+    io.PipelineControl.ID := StageControl.stall
+    io.PipelineControl.EX := StageControl.stall
+    io.PipelineControl.MEM := StageControl.stall
+    io.PipelineControl.WB := StageControl.stall
+    lastCycleStall := true.B
+  }.otherwise {
+    io.PipelineControl.IF := StageControl.run
+    io.PipelineControl.ID := StageControl.run
+    io.PipelineControl.EX := StageControl.run
+    io.PipelineControl.MEM := StageControl.run
+    io.PipelineControl.WB := StageControl.run
+  }
+
+  /*
    * ALU
    */
 
   // operation 1 select
   when(io.op1Select === Op1Select.rs1) {
-    ALU.op1 := io.readData1
+    ALU.op1 := RegSource1.regSource
   }.elsewhen(io.op1Select === Op1Select.PC) { // for jump and link
     ALU.op1 := io.PC
   }.otherwise {
@@ -116,7 +237,7 @@ class Execute extends MultiIOModule {
   }.elsewhen(io.op2Select === Op2Select.imm) {
     ALU.op2 := imm
   }.elsewhen(io.op2Select === Op2Select.rs2) {
-    ALU.op2 := io.readData2
+    ALU.op2 := RegSource2.regSource
   }.otherwise {
     ALU.op2 := 0.U
   }
@@ -126,5 +247,11 @@ class Execute extends MultiIOModule {
   KeepSignal(io.immType)
   KeepSignal(io.PC)
   KeepSignal(io.branchType)
+  KeepSignal(io.PipelineControl.IF)
+  KeepSignal(io.PipelineControl.ID)
+  KeepSignal(io.PipelineControl.EX)
+  KeepSignal(io.PipelineControl.MEM)
+  KeepSignal(io.PipelineControl.WB)
+  KeepSignal(lastCycleStall)
 } 
   

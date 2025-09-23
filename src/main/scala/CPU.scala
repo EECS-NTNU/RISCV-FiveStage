@@ -31,6 +31,7 @@ class CPU extends MultiIOModule {
   val EX  = Module(new Execute)
   val MEM = Module(new MemoryFetch)
 
+  val PipelineControl = Wire(new PipelineControl)
 
   /**
     * Setup. You should not change this code
@@ -53,10 +54,14 @@ class CPU extends MultiIOModule {
     TODO: Your code here
     */
 
+  IF.io.StageControl := PipelineControl.IF
+
   // IF to ID
   IFBarrier.PCIn          := IF.io.PC
   IFBarrier.InstructionIn := IF.io.Instruction
+  IFBarrier.StageControl  := PipelineControl.ID
   ID.io.Instruction       := IFBarrier.InstructionOut
+  ID.io.StageControl      := PipelineControl.ID
 
   // ID to EX
   IDBarrier.InstructionIn    := ID.io.Instruction
@@ -69,6 +74,7 @@ class CPU extends MultiIOModule {
   IDBarrier.immTypeIn        := ID.io.immType
   IDBarrier.ALUopIn          := ID.io.ALUop
   IDBarrier.PCIn             := IFBarrier.PCOut // passed through ID
+  IDBarrier.StageControl     := PipelineControl.EX
   EX.io.Instruction    := IDBarrier.InstructionOut
   EX.io.readData1      := IDBarrier.readData1Out
   EX.io.readData2      := IDBarrier.readData2Out
@@ -80,6 +86,20 @@ class CPU extends MultiIOModule {
   EX.io.PC             := IDBarrier.PCOut
   EX.io.controlSignals := IDBarrier.controlSignalsOut
 
+  // forward signals
+  EX.io.DMEMforwardedMEM := MEM.io.DMEMData // used when stalling for load resolution
+  EX.io.ALUforwardedMEM := EXBarrier.ALUResultOut
+  EX.io.MEMInstruction  := EXBarrier.InstructionOut
+  EX.io.MEMControlSignals := EXBarrier.controlSignalsOut
+  EX.io.DMEMforwardedWB := MEMBarrier.DMEMDataOut
+  EX.io.ALUforwardedWB  := MEMBarrier.ALUResultOut
+  EX.io.WBInstruction   := MEMBarrier.InstructionOut
+  EX.io.WBControlSignals := MEMBarrier.controlSignalsOut
+
+
+  // for stalls
+  PipelineControl      := EX.io.PipelineControl     
+
   // EX to MEM
   EXBarrier.InstructionIn    := EX.io.Instruction
   EXBarrier.ALUResultIn      := EX.io.ALUResult
@@ -87,6 +107,7 @@ class CPU extends MultiIOModule {
   EXBarrier.BranchTakenIn    := EX.io.BranchTaken
   EXBarrier.controlSignalsIn := IDBarrier.controlSignalsOut
   EXBarrier.readData2In      := EX.io.readData2 // passed through EX
+  EXBarrier.StageControl     := PipelineControl.MEM
   MEM.io.ALUResult           := EXBarrier.ALUResultOut
   MEM.io.readData2           := EXBarrier.readData2Out
   MEM.io.controlSignals      := EXBarrier.controlSignalsOut
@@ -98,6 +119,7 @@ class CPU extends MultiIOModule {
   MEMBarrier.BranchTargetIn   := EXBarrier.BranchTargetOut // BranchTarget passed through
   MEMBarrier.BranchTakenIn    := EXBarrier.BranchTakenOut // BranchTaken passed through
   MEMBarrier.DMEMDataIn       := MEM.io.DMEMData
+  MEMBarrier.StageControl     := PipelineControl.WB
   ID.io.ALUResultFromWB       := MEMBarrier.ALUResultOut
   ID.io.instructionFromWB     := MEMBarrier.InstructionOut
   ID.io.controlSignalsFromWB  := MEMBarrier.controlSignalsOut
