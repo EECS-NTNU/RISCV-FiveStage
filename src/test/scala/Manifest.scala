@@ -71,8 +71,31 @@ class ProfileCache extends FlatSpec with Matchers {
 }
 
 class SingleTest extends FlatSpec with Matchers {
-  it should "just werk" in {
+  it should "just work" in {
     TestRunner.run(Manifest.singleTestOptions) should be(true)
+  }
+}
+
+// Test by command: "testOnly FiveStage.AllBasicTests"
+class AllBasicTests extends FlatSpec with Matchers {
+  it should "just work" in {
+    val works = getAllBasicNames.filterNot(_ == "convolution.s").map{testname =>
+      say(s"testing basic $testname")
+      val opts = Manifest.allTestOptions(testname)
+      (testname, TestRunner.run(opts))
+    }
+    if(works.foldLeft(true)(_ && _._2))
+      say(Console.GREEN + "All tests successful!" + Console.RESET)
+    else {
+      val success = works.map(x => if(x._2) 1 else 0).sum
+      val total   = works.size
+      say(s"$success/$total tests successful")
+      works.foreach{ case(name, success) =>
+        val msg = if(success) Console.GREEN + s"$name successful" + Console.RESET
+        else Console.RED + s"$name failed" + Console.RESET
+        say(msg)
+      }
+    }
   }
 }
 

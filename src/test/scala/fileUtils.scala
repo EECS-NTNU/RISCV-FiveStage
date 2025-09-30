@@ -58,10 +58,18 @@ object fileUtils {
   def getTestDir: File =
     new File(getClass.getClassLoader.getResource("tests").getPath)
 
+  def getBasicDir: File =
+    new File(getClass.getClassLoader.getResource("tests/basic").getPath)
+
   def getAllTests: List[File] = getListOfFilesRecursive(getTestDir.getPath)
       .filter( f => f.getPath.endsWith(".s") )
 
+  def getAllBasic: List[File] = getListOfFilesRecursive(getBasicDir.getPath)
+      .filter( f => f.getPath.endsWith(".s") )
+
   def getAllTestNames: List[String]        = getAllTests.map(_.toString.split("/").takeRight(1).mkString)
+
+  def getAllBasicNames: List[String]       = getAllBasic.map(_.toString.split("/").takeRight(1).mkString)
 
   // Not tested.
   def getAllWindowsTestNames: List[String] = getAllTests.map(_.toString.split("\\\\").takeRight(1).mkString)
