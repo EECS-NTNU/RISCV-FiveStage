@@ -39,6 +39,9 @@ class InstructionDecode extends MultiIOModule {
       val op2Select      = Output(UInt(1.W))
       val immType        = Output(UInt(3.W))
       val ALUop          = Output(UInt(4.W))
+      
+      val lastWriteData  = Output(UInt(32.W))
+      val lastWriteDest  = Output(UInt(5.W))
     }
   )
 
@@ -66,13 +69,24 @@ class InstructionDecode extends MultiIOModule {
 
   // these two get their values from the WB stage
   registers.io.writeAddress := io.instructionFromWB.registerRd
-  registers.io.writeEnable  := io.controlSignalsFromWB.regWrite && io.StageControl != StageControl.stall
+  registers.io.writeEnable  := io.controlSignalsFromWB.regWrite // && io.StageControl != StageControl.stall
+
+  // forward last written value
+  val lastWriteData = RegInit(0.U(32.W))
+  val lastWriteDest = RegInit(0.U(32.W))
+
+  io.lastWriteData := lastWriteData
+  io.lastWriteDest := lastWriteDest
+
+  lastWriteDest := io.instructionFromWB.registerRd
 
   // Loads vs alu operations
   when(io.controlSignalsFromWB.memRead) {
     registers.io.writeData    := io.DMEMDataFromWB
+    lastWriteData := io.DMEMDataFromWB
   }.otherwise {
     registers.io.writeData    := io.ALUResultFromWB
+    lastWriteData := io.ALUResultFromWB
   }
 
   // decoder

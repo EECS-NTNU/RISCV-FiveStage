@@ -95,7 +95,8 @@ class CPU extends MultiIOModule {
   EX.io.ALUforwardedWB  := MEMBarrier.ALUResultOut
   EX.io.WBInstruction   := MEMBarrier.InstructionOut
   EX.io.WBControlSignals := MEMBarrier.controlSignalsOut
-
+  EX.io.lastWriteData := ID.io.lastWriteData
+  EX.io.lastWriteDest := ID.io.lastWriteDest
 
   // for stalls
   PipelineControl      := EX.io.PipelineControl     
@@ -106,7 +107,7 @@ class CPU extends MultiIOModule {
   EXBarrier.BranchTargetIn   := EX.io.BranchTarget
   EXBarrier.BranchTakenIn    := EX.io.BranchTaken
   EXBarrier.controlSignalsIn := IDBarrier.controlSignalsOut
-  EXBarrier.readData2In      := EX.io.readData2 // passed through EX
+  EXBarrier.readData2In      := EX.io.DMEMData
   EXBarrier.StageControl     := PipelineControl.MEM
   MEM.io.ALUResult           := EXBarrier.ALUResultOut
   MEM.io.readData2           := EXBarrier.readData2Out

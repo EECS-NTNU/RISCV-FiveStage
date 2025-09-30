@@ -48,12 +48,13 @@ class IDBarrier extends MultiIOModule {
   when(io.StageControl != StageControl.stall) {
     when(io.StageControl === StageControl.bubble) {
       InstructionReg    := Instruction.NOP // insert NOP to create a bubble in the pipeline
+      controlSignalsReg := ControlSignals.nop
     }.otherwise {
       InstructionReg    := io.InstructionIn
+      controlSignalsReg := io.controlSignalsIn
     }
     readData1Reg      := io.readData1In
     readData2Reg      := io.readData2In
-    controlSignalsReg := io.controlSignalsIn
     branchTypeReg     := io.branchTypeIn
     op1SelectReg      := io.op1SelectIn
     op2SelectReg      := io.op2SelectIn

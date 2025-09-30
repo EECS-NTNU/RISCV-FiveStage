@@ -29,12 +29,13 @@ class MEMBarrier extends Module {
   when(io.StageControl != StageControl.stall) {
     when(io.StageControl === StageControl.bubble) {
       InstructionReg    := Instruction.NOP // insert NOP to create a bubble in the pipeline
+      controlSignalsReg := ControlSignals.nop
     }.otherwise {
       InstructionReg    := io.InstructionIn
+      controlSignalsReg := io.controlSignalsIn
     }
   
     ALUResultReg      := io.ALUResultIn
-    controlSignalsReg := io.controlSignalsIn
     BranchTargetReg   := io.BranchTargetIn
     BranchTakenReg    := io.BranchTakenIn
   }
